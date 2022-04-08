@@ -9,7 +9,11 @@ class Command(BaseCommand):
     help = 'The Zen of Python'
 
     def handle(self, *args, **options):
-        result = requests.get('https://www.retail.ru/rbc/tradingnetworks/')
+        for number_page in range(1, 25):
+            self.process_page(number_page)
+    
+    def process_page(self, page_n):
+        result = requests.get(f'https://www.retail.ru/rbc/tradingnetworks/?PAGEN_1={page_n}')
         print(f"result code is {result.status_code}")
         if result.status_code == 200:
             print('Success!  == 200')
@@ -21,10 +25,10 @@ class Command(BaseCommand):
         soup = BeautifulSoup(result.text, 'html.parser')
         for item in soup.find("div", {"class": "events__row"}).findAll("div", {"class": "col"}):
             print(item.find("div", {"class": "title"}))
-            print(item.find("div", {"class": "title"}).contents[0])
+            name = item.find("div", {"class": "title"}).contents[0]
             #href_tags = item.find_all(href=True)
-            print(item.find("a", {"class": "details"})["href"])
+            link = item.find("a", {"class": "details"})["href"]
             #for link in item('a'):
             #    print(link.get('href'))
-            
+            Network.objects.update_or_create(name=name, defaults={"url": link})
 
